@@ -1,3 +1,7 @@
 [submodule "skills/sketch"]
 	path = skills/sketch
 	url = https://github.com/Dakkshin/sketch.git
+[submodule "vendor/agent_skills"]
+	path = vendor/agent_skills
+	url = https://github.com/janestreet/agent_skills.git
+	branch = master

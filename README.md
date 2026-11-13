@@ -16,6 +16,8 @@ Type `/lock-in <topic or path to course files>`, optionally followed by a mode w
 
 ## Layout
 
-The plugin lives at `~/projects/dstack`, and `~/.claude/skills/lock-in` is a symlink to it, so Claude Code loads it in place as `dstack@skills-dir`. The root command takes its name from that symlink, which is why it is `/lock-in` while the skills under it are `dstack:<name>`. The six skill folders are real folders under `skills/`, and `~/.agents/skills/<name>` symlinks back to each one so that pi, opencode and Antigravity keep reading the same files. `skills/sketch` is also its own git repo (github.com/Dakkshin/sketch).
+The plugin lives at `~/projects/dstack`, and `~/.claude/skills/lock-in` is a symlink to it, so Claude Code loads it in place as `dstack@skills-dir`. The root command takes its name from that symlink, which is why it is `/lock-in` while the skills under it are `dstack:<name>`. The six skill folders are real folders under `skills/`, and `~/.agents/skills/<name>` symlinks back to each one so that pi, opencode and Antigravity keep reading the same files. `skills/sketch` is a submodule of github.com/Dakkshin/sketch. `skills/socratic-tutor` is a link into `vendor/agent_skills`, which is a submodule of Jane Street's github.com/janestreet/agent_skills. A daily GitHub Action (`.github/workflows/update-socratic-tutor.yml`) moves that submodule to Jane Street's latest commit and pushes the bump, so `git pull` here brings the update down.
+
+Clone with `git clone --recurse-submodules`, since the two submodules are empty otherwise.
 
 Disable it with `claude plugin disable dstack@skills-dir`.

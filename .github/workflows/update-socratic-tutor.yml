@@ -1,0 +1,39 @@
+name: Update socratic-tutor from Jane Street
+
+# skills/socratic-tutor is a link into vendor/agent_skills, which is a submodule of
+# janestreet/agent_skills. This job moves the submodule to upstream master once a day
+# and commits the bump to main, so the repo always carries the latest version.
+
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: Move vendor/agent_skills to upstream master
+        run: |
+          git submodule update --init vendor/agent_skills
+          git submodule update --remote vendor/agent_skills
+          test -f vendor/agent_skills/socratic-tutor/SKILL.md
+
+      - name: Commit the bump if upstream moved
+        run: |
+          if git diff --quiet -- vendor/agent_skills; then
+            echo "socratic-tutor is already current"
+            exit 0
+          fi
+          new=$(git -C vendor/agent_skills log -1 --format='%h %s')
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "Update socratic-tutor to janestreet/agent_skills $new"
+          git push
