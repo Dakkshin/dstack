@@ -1,14 +1,12 @@
 # dstack
 
-I'm Dakkshin, and I'm a systems engineer. I learn the way I debug, which is by finding the exact place where my understanding breaks and fixing that one thing before moving on.
+I'm Dax. I learn the way I debug, which is by finding the exact place where my understanding breaks and fixing that one thing before moving on.
 
 Most of the time an AI tutor gets that backwards. You ask one question and get back a wall of text, so you end up reading more and understanding about the same. The explanation is there but nothing makes you prove you've got it.
 
 **dstack is my answer.** It's a small set of learning skills for coding agents, behind one command called `/lock-in`. You tell it what you're trying to learn, and it works out what's actually in the way. That might be a word you can't pin down, terms that blur together, a subject you can't see the shape of, a mechanism you can't picture, or knowledge you've never been tested on. Then it reaches for the one tool that fixes that problem and leaves the other five alone.
 
 **The agent builds and you think.** The maps, tables, whiteboard pages and videos are scaffolding. The learning happens when you answer questions cold, so every path through dstack leads to the Socratic tutor.
-
-![A sketch page explaining how encryption works](https://raw.githubusercontent.com/Dakkshin/sketch/main/images/01-hero.png)
 
 ## install
 
@@ -77,7 +75,7 @@ Everything for one topic lands in `./<topic>-study/`, along with a `progress.md`
 | [`data-table`](./skills/data-table/SKILL.md) | several terms share a role and you keep swapping them | one table, with columns picked to separate exactly the things you're mixing up |
 | [`mindmap`](./skills/mindmap/SKILL.md) | you need the shape of a subject, or want your course files turned into something you can explore | an interactive knowledge tree in one HTML file, built from what the model knows or strictly from your sources |
 | [`sketch`](./skills/sketch/SKILL.md) | you can't picture how a mechanism works | a hand-drawn whiteboard page with diagrams that draw themselves step by step and labs where you change the inputs and watch the real computation |
-| [`manim-explainer`](./skills/manim-explainer/SKILL.md) | you want to watch an idea unfold, or want something to rewatch before an exam | a narrated 1080p60 video in the style of 3Blue1Brown, which costs ElevenLabs credits and a few minutes of rendering |
+| [`manim-explainer`](./skills/manim-explainer/SKILL.md) | you want to watch an idea unfold, or want something to rewatch before an exam | a narrated 1080p60 video in the style of 3Blue1Brown. It asks which voice you want first, which is Mark, Alex, Will, Matilda or Jessica, and can play you a free sample of each. Rendering costs ElevenLabs credits and a few minutes |
 | [`socratic-tutor`](./skills/socratic-tutor/SKILL.md) | you need to prove you actually know it | a session that teaches by asking, tracks each subskill from 0 to 5, re-tests old material without warning, and ends with a final assessment |
 
 <details>

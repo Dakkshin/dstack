@@ -3,7 +3,8 @@
     python tts.py <project_dir>
 
 Key: ELEVENLABS_API_KEY from the environment, else from <skill>/.env. Never printed.
-Voice: ELEVENLABS_VOICE_ID (env or .env), else the default below.
+Voice: VOICE_NAME or VOICE_ID in the project's narration.py. There is no default, because the
+skill asks the person which voice to use before the first build.
 Clips are cached in <project>/audio/<beat>.mp3 next to a .txt of the text they were made
 from, so only changed beats are re-synthesised. Without a key it writes estimated
 durations so a silent preview can still be timed.
@@ -19,13 +20,17 @@ from pathlib import Path
 import requests
 
 SKILL = Path(__file__).resolve().parent.parent
-# Named voices, so a project asks for "dax" instead of pasting an id. Pick one in
-# narration.py (`VOICE_NAME`), which is what the skill asks for before the first build.
+# Named voices, so a project asks for "matilda" instead of pasting an id. The skill asks the
+# person to pick one and writes it into narration.py as VOICE_NAME. The notes come from each
+# voice's ElevenLabs labels. jessica is a shared-library voice, so /v1/voices/<id> answers
+# voice_not_found for it and its preview comes from /v1/shared-voices instead.
 VOICES = {
-    "dax": ("luatDliq6kNyK0iDnpTS", "default; cloned, young, en-indian"),
-    "karpathy": ("whMcAwVxjECAijwDw09I", "cloned; drier, more technical"),
+    "mark": ("UgBBYS2sOqTuMpoF3BR0", "young male, American; casual and conversational"),
+    "alex": ("SHJeg1jtED7EW6Zr6rHc", "middle-aged male, Canadian; calm, clear and friendly"),
+    "will": ("bIHbv24MWmeRgasZH58o", "young male, American; relaxed and upbeat"),
+    "matilda": ("XrExE9yKIg1WjnnlVkGX", "middle-aged female, American; knowledgeable, made for teaching"),
+    "jessica": ("r1KmysJdVYZjJCm4mL3b", "female, shared library; playful, bright and warm"),
 }
-DEFAULT_VOICE_NAME = "dax"
 DEFAULT_MODEL = "eleven_multilingual_v2"
 WORDS_PER_SEC = 2.4  # silent estimate only
 # Three delivery registers. Real speech moves between them, so each beat picks one from its
@@ -81,12 +86,13 @@ def load_narration(project: Path):
 
 
 def resolve_voice(nar):
-    """narration.py VOICE_NAME/VOICE_ID, then ELEVENLABS_VOICE/ELEVENLABS_VOICE_ID, then dax.
+    """VOICE_NAME, else VOICE_ID, from narration.py. Exits when neither is set.
 
     Returns (name, id). The name keeps the log and voice.json readable, the id is what goes on
-    the wire, and the id is what the clip cache keys on, so switching voice re-synthesises."""
-    asked = (getattr(nar, "VOICE_NAME", "") or os.environ.get("ELEVENLABS_VOICE", "")).strip()
-    raw = (getattr(nar, "VOICE_ID", "") or os.environ.get("ELEVENLABS_VOICE_ID", "")).strip()
+    the wire, and the id is what the clip cache keys on, so switching voice re-synthesises.
+    The environment is never consulted, so a stale .env can't pick a voice nobody asked for."""
+    asked = (getattr(nar, "VOICE_NAME", "") or "").strip()
+    raw = (getattr(nar, "VOICE_ID", "") or "").strip()
     if asked:
         if asked.lower() in VOICES:
             key = asked.lower()
@@ -99,7 +105,39 @@ def resolve_voice(nar):
             if vid == raw:
                 return key, raw
         return raw[:8], raw
-    return DEFAULT_VOICE_NAME, VOICES[DEFAULT_VOICE_NAME][0]
+    sys.exit("no voice chosen: ask the person which voice to use, then set VOICE_NAME in "
+             f"narration.py to one of: {', '.join(VOICES)}")
+
+
+def previews(dest: Path):
+    """Download each named voice's preview MP3 into dest. Costs no credits.
+
+    The voice endpoints return a preview_url on ElevenLabs' public CDN, and fetching that file
+    is free. Shared-library voices aren't on /v1/voices, so they fall back to a search of
+    /v1/shared-voices by id."""
+    load_env()
+    key = os.environ.get("ELEVENLABS_API_KEY", "").strip()
+    if not key:
+        sys.exit("previews need ELEVENLABS_API_KEY in the skill's .env")
+    h = {"xi-api-key": key}
+    dest.mkdir(parents=True, exist_ok=True)
+    for name, (vid, note) in VOICES.items():
+        url = None
+        r = requests.get(f"https://api.elevenlabs.io/v1/voices/{vid}", headers=h, timeout=30)
+        if r.ok:
+            url = r.json().get("preview_url")
+        else:
+            r = requests.get("https://api.elevenlabs.io/v1/shared-voices",
+                             params={"search": vid, "page_size": 5}, headers=h, timeout=30)
+            if r.ok:
+                url = next((v.get("preview_url") for v in r.json().get("voices", [])
+                            if v.get("voice_id") == vid), None)
+        if not url:
+            print(f"{name:<8} no preview found ({note})")
+            continue
+        out = dest / f"{name}.mp3"
+        out.write_bytes(requests.get(url, timeout=60).content)
+        print(f"{name:<8} {out}  ({note})")
 
 
 def probe(path: Path) -> float:
@@ -181,5 +219,8 @@ if __name__ == "__main__":
         pad = max(len(k) for k in VOICES)
         for key, (vid, note) in VOICES.items():
             print(f"{key:<{pad}}  {vid}  {note}")
+        sys.exit(0)
+    if len(sys.argv) > 1 and sys.argv[1] in ("--previews", "previews"):
+        previews(Path(sys.argv[2] if len(sys.argv) > 2 else "voice-previews").resolve())
         sys.exit(0)
     main(Path(sys.argv[1]).resolve())

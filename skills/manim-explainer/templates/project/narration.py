@@ -11,7 +11,7 @@ N = json.loads(Path(__file__).with_name("numbers.json").read_text())
 
 TITLE = "<Topic>: narration script"
 OUTPUT_NAME = "explainer.mp4"
-VOICE_NAME = "dax"  # ask the person which voice before the first build
+VOICE_NAME = ""  # ask the person: mark, alex, will or matilda (jessica on request)
 INTRO = "Every number below comes from compute.py through numbers.json."
 SOURCES: list[str] = []
 

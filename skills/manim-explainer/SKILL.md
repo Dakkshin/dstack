@@ -46,33 +46,46 @@ LaTeX: Arch needs `texlive-basic texlive-latex texlive-latexrecommended texlive-
 texlive-binextra`. `standalone.cls` (texlive-latexextra) is optional. The lib falls back to an
 `article` template when it is missing.
 
-## Pick the voice (ask the human, never assume)
+## Pick the voice (always ask, never assume)
 
-Two named voices are wired into `tts.py`, and the build takes one per project:
-
-```bash
-"$MK/.venv/bin/python" "$MK/scripts/tts.py" --voices
-```
+Five named voices are wired into `tts.py`. The build has no default and stops with
+`no voice chosen` until the project's `narration.py` names one.
 
 | name | character |
 |---|---|
-| `dax` (default) | cloned, young male, en-indian; clear and even, carries a walkthrough without pulling focus |
-| `karpathy` | cloned, drier and more technical; good for a maths or crypto deep dive |
+| `mark` | young male, American, casual and conversational |
+| `alex` | middle-aged male, Canadian, calm, clear and friendly |
+| `will` | young male, American, relaxed and upbeat |
+| `matilda` | middle-aged female, American, knowledgeable and made for teaching |
+| `jessica` | female, playful, bright and warm |
 
-Before the first build of a new project, ask which voice it should use and write the answer
-into `narration.py` as `VOICE_NAME = "dax"` or `VOICE_NAME = "karpathy"`. Ask once per project,
-not per beat, and do not pick silently: nothing in the build can tell the two apart, and the
-same script reads differently in each. `build.py` then prints `voice: <name> (<id>)` and writes
-`voice.json` into the project so the choice is on the record.
+As soon as this skill is invoked, and before any build, ask the person which voice to use.
+
+1. Ask one question with exactly four options, which are Mark, Alex, Will and Matilda, each
+   with its one-line character from the table. Use the question tool when you have one. Say in
+   the question that Jessica is also available, and that they can hear previews first.
+2. If they want previews, download them. This calls the free voice-listing endpoints and
+   fetches each voice's static sample from ElevenLabs' public CDN, so it costs no credits.
+
+   ```bash
+   "$MK/.venv/bin/python" "$MK/scripts/tts.py" --previews <project>/voice-previews
+   ```
+
+   Give them the five MP3 paths it prints so they can play them, then ask again.
+3. Write the answer into `narration.py` as `VOICE_NAME = "<name>"`.
+
+Ask once per project, not per beat, and never pick on their behalf. Nothing in the build can
+tell the voices apart, and the same script reads differently in each. `build.py` then prints
+`voice: <name> (<id>)` and writes `voice.json` into the project so the choice is on the record.
 
 Switching the voice on an existing project re-synthesises every clip, because the clip cache is
 keyed on the voice id. The images do not change, so only the audio and the assembly redo.
 
-An id that is not in the table still works: put `VOICE_ID = "<id>"` in `narration.py`, or
-`ELEVENLABS_VOICE_ID=<id>` in `.env`. Order of precedence: `VOICE_NAME`, then `VOICE_ID` in
-narration.py, then `ELEVENLABS_VOICE`, then `ELEVENLABS_VOICE_ID` in the environment, then
-`dax`. A shared voice can synthesise while `/v1/voices/<id>` answers `voice_not_found`, so test
-an unfamiliar id with a short sentence before building the whole project.
+A voice that is not in the table still works if the person gives you its id. Put
+`VOICE_ID = "<id>"` in `narration.py`. The environment and `.env` are never read for the voice.
+A shared-library voice, such as `jessica`, can synthesise while `/v1/voices/<id>` answers
+`voice_not_found`, so test an unfamiliar id with a short sentence before building the whole
+project.
 
 ## Project layout
 
