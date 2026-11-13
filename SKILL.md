@@ -1,12 +1,12 @@
 ---
-name: dstack
-description: Entry point for learning a topic properly. Reads what the learner is stuck on and routes to the right tool in the dstack kit, which is define (pin a term), data-table (separate terms that blur together), mindmap (see the shape of a subject), sketch (a whiteboard explainer with labs for one mechanism), manim-explainer (a narrated 3Blue1Brown-style video) and socratic-tutor (drill to mastery). Use when the user types /dstack, says "lock in on X", "help me learn X", "I need to understand X for my exam", "study session", or hands over course material and wants to learn it rather than get a one-off answer.
+name: lock-in
+description: Entry point for learning a topic properly. Reads what the learner is stuck on and routes to the right tool in the dstack plugin, which is define (pin a term), data-table (separate terms that blur together), mindmap (see the shape of a subject), sketch (a whiteboard explainer with labs for one mechanism), manim-explainer (a narrated 3Blue1Brown-style video) and socratic-tutor (drill to mastery). Use when the user types /lock-in, says "lock in on X", "help me learn X", "I need to understand X for my exam", "study session", or hands over course material and wants to learn it rather than get a one-off answer.
 argument-hint: "<topic, question or path to course material> [define|table|map|sketch|video|tutor]"
 ---
 
-# dstack
+# lock-in
 
-dstack exists to make learning faster, in which the AI does the building and the learner does the thinking. Every tool in the kit attacks one specific way that understanding breaks down, so the job of this skill is to work out which one is breaking right now and reach for that tool, not all six.
+lock-in exists to make learning faster, in which the AI does the building and the learner does the thinking. Every tool in the kit attacks one specific way that understanding breaks down, so the job of this skill is to work out which one is breaking right now and reach for that tool, not all six.
 
 Input: `$ARGUMENTS`
 
@@ -31,7 +31,7 @@ In Claude Code the skills are invoked through the Skill tool as `dstack:<name>`,
    - A mode word if one was given: `define`, `table`, `map`, `sketch`, `video` or `tutor`.
    If the topic itself is missing, ask for it in one line. Everything else gets a sensible default and is stated, not asked.
 
-2. **A mode word or an obvious match goes straight to that skill.** "/dstack define idempotence" is `define`. "/dstack ~/uni/CSG2305/week3.pdf map" is `mindmap` in sources mode. "What's the difference between a mutex, a semaphore and a monitor" is `data-table`. Load the skill and run it with no preamble.
+2. **A mode word or an obvious match goes straight to that skill.** "/lock-in idempotence define" is `define`. "/lock-in ~/uni/CSG2305/week3.pdf map" is `mindmap` in sources mode. "What's the difference between a mutex, a semaphore and a monitor" is `data-table`. Load the skill and run it with no preamble.
 
 3. **No mode means diagnose first.** Pick from the symptom, not the topic:
    - Unfamiliar vocabulary is blocking everything else, so start with `define`.
