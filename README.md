@@ -1,107 +1,103 @@
 # dstack
 
-I'm Dax. I learn the way I debug, which is by finding the exact place where my understanding breaks and fixing that one thing before moving on.
+These are the skills I use when I'm studying with AI. I wrote them for my own uni units, mostly because asking a chatbot to explain something gave me long answers that didn't stick.
 
-Most of the time an AI tutor gets that backwards. You ask one question and get back a wall of text, so you end up reading more and understanding about the same. The explanation is there but nothing makes you prove you've got it.
-
-**dstack is my answer.** It's a small kit for learning anything with an AI assistant, behind one command called `/lock-in`. You tell it what you're trying to learn, and it works out what's actually in the way. That might be a word you can't pin down, terms that blur together, a subject you can't see the shape of, a mechanism you can't picture, or knowledge you've never been tested on. Then it reaches for the one tool that fixes that problem and leaves the other five alone.
-
-**The AI builds and you think.** The maps, tables, whiteboard pages and videos are scaffolding. The learning happens when you answer questions cold, so every path through dstack leads to the Socratic tutor.
+`/lock-in` is the one command you need. You give it a topic or your course files, and it picks one of six tools based on what you're stuck on. That might be a short definition, a comparison table, a mindmap of the whole subject, a whiteboard-style explainer, a narrated video, or a tutor that quizzes you until you actually know it. It does one step at a time, and once there's something to test you on it steers you to the tutor.
 
 ## install
 
-Clone it with its submodules, since two of the skills live in their own repos.
+Clone it with its submodules, because two of the skills live in their own repos.
 
 ```bash
 git clone --recurse-submodules https://github.com/Dakkshin/dstack.git ~/projects/dstack
 ```
 
-Then point your AI app at it. dstack is a set of skills, which are folders of plain instructions that an app can load, so it works in any app that reads skills.
+Then point your AI app at it. A skill is a folder of plain instructions that an app can load, so dstack works in any app that reads skills.
 
-- If your app loads a whole folder as a plugin, link the repo into its skills folder under the name `lock-in`, as in `ln -s ~/projects/dstack <skills folder>/lock-in`. The folder name becomes the root command, and the skills under it come up as `dstack:<name>`.
+- If your app loads a whole folder as a plugin, link the repo into its skills folder under the name `lock-in`, as in `ln -s ~/projects/dstack <skills folder>/lock-in`. The folder name becomes the command, which is why it's `/lock-in`, and the skills under it show up as `dstack:<name>`.
 - If your app reads plain skill folders from `~/.agents/skills`, link each one in with `for s in ~/projects/dstack/skills/*; do ln -s "$s" ~/.agents/skills/; done`. The skills keep their plain names there.
 
-`manim-explainer` needs a one-time setup for its Python environment and an ElevenLabs key. Run `skills/manim-explainer/setup.sh` and put the key in `skills/manim-explainer/.env`. The other five skills need nothing beyond the clone.
+`manim-explainer` needs a one-time setup, which is its Python environment and an ElevenLabs key for the voice. Run `skills/manim-explainer/setup.sh` and then put the key in `skills/manim-explainer/.env`. The other five skills work straight after the clone.
 
 ## get started
 
-Type `/lock-in`, then whatever you're learning.
+Type `/lock-in` and then whatever you're learning.
 
 ```
-/lock-in TCP congestion control, I have an exam on Friday
-```
-
-```
-/lock-in ~/uni/CSG2305/week3-slides.pdf
-```
-
-If you already know which tool you want, put a mode word at the end, which is `define`, `table`, `map`, `sketch`, `video` or `tutor`.
-
-```
-/lock-in idempotence define
+/lock-in photosynthesis, I have a biology exam on Friday
 ```
 
 ```
-/lock-in mutex, semaphore and monitor table
+/lock-in ~/uni/week3-slides.pdf
+```
+
+If you already know which tool you want, put a mode word at the end. The mode words are `define`, `table`, `map`, `sketch`, `video` and `tutor`.
+
+```
+/lock-in opportunity cost define
+```
+
+```
+/lock-in mitosis, meiosis and binary fission table
 ```
 
 ## how `/lock-in` decides
 
-It reads the symptom rather than the topic.
+It looks at what's going wrong for you rather than at the topic.
 
 | What's going wrong | Where it goes |
 |---|---|
-| An unfamiliar word is blocking everything else | `define` |
-| Two or more terms keep collapsing into each other | `data-table` |
+| A word you don't know is blocking everything else | `define` |
+| Two or more terms keep blurring into each other | `data-table` |
 | You don't know where to start, or you've handed it a whole unit | `mindmap` |
-| You can recite the steps but couldn't redraw them | `sketch` |
+| You can recite the steps but couldn't draw them | `sketch` |
 | You think you get it, or the exam is close | `socratic-tutor` |
-| You asked for a video, or you want one from a sketch you already have | `manim-explainer` |
+| You asked for a video, or you want one made from a sketch you already have | `manim-explainer` |
 
 When it can't tell, it asks you one question, which is whether the problem is the words, the big picture, how it works, or whether you really know it.
 
-For a whole subject it lays out a path, which is to map the subject, define the terms the map leans on, table anything you keep confusing, sketch the hardest mechanism, and then get tutored to mastery. It runs only the first step and then waits for you, because five artifacts at once is just another wall of text.
+For a whole subject it lays out a path. It maps the subject first and then defines the terms the map leans on. After that it tables anything you keep mixing up, sketches the hardest part, and tutors you until you know it. It only runs the first step and then waits for you to pick the next one.
 
-Everything for one topic lands in `./<topic>-study/`, along with a `progress.md` that holds the path so far and the tutor's saved state. Come back to the same topic a week later and it picks up from there.
+Everything for one topic goes into a `./<topic>-study/` folder, along with a `progress.md` file that keeps the path so far and where the tutor left off. If you come back to the same topic a week later, it picks up from there.
 
 ## skills
 
-`/lock-in` runs these for you. You can also call any of them directly.
+`/lock-in` runs these for you, but you can also call any of them on its own.
 
 | Skill | Use it when | What you get |
 |---|---|---|
-| [`/lock-in`](./SKILL.md) | you want to learn something and aren't sure which tool fits | a diagnosis and the first step, run for you |
-| [`define`](./skills/define/SKILL.md) | you need one term pinned down without the textbook around it | a definition of 250 words at most, split into what the term means, what it covers, and one real example |
-| [`data-table`](./skills/data-table/SKILL.md) | several terms share a role and you keep swapping them | one table, with columns picked to separate exactly the things you're mixing up |
-| [`mindmap`](./skills/mindmap/SKILL.md) | you need the shape of a subject, or want your course files turned into something you can explore | an interactive knowledge tree in one HTML file, built from what the model knows or strictly from your sources |
-| [`sketch`](./skills/sketch/SKILL.md) | you can't picture how a mechanism works | a hand-drawn whiteboard page with diagrams that draw themselves step by step and labs where you change the inputs and watch the real computation |
-| [`manim-explainer`](./skills/manim-explainer/SKILL.md) | you want to watch an idea unfold, or want something to rewatch before an exam | a narrated 1080p60 video in the style of 3Blue1Brown. It asks which voice you want first, which is Mark, Alex, Will, Matilda or Jessica, and can play you a free sample of each. Rendering costs ElevenLabs credits and a few minutes |
-| [`socratic-tutor`](./skills/socratic-tutor/SKILL.md) | you need to prove you actually know it | a session that teaches by asking, tracks each subskill from 0 to 5, re-tests old material without warning, and ends with a final assessment |
+| [`/lock-in`](./SKILL.md) | you want to learn something and aren't sure which tool fits | it works out what you're stuck on and runs the first step for you |
+| [`define`](./skills/define/SKILL.md) | you need one term pinned down without a textbook's worth of context around it | a definition of 250 words at most, which covers what the term means, what falls under it, and one real example |
+| [`data-table`](./skills/data-table/SKILL.md) | a few terms do similar jobs and you keep swapping them | one table, in which the columns are picked to separate the things you're mixing up |
+| [`mindmap`](./skills/mindmap/SKILL.md) | you need the shape of a whole subject, or want your course files turned into something you can explore | an interactive map of the subject in one HTML file. It's built from what the model knows, or only from your own files if you give it some |
+| [`sketch`](./skills/sketch/SKILL.md) | you can't picture how something works | a hand-drawn whiteboard page, in which the diagrams draw themselves step by step and the labs let you change the inputs and watch what happens |
+| [`manim-explainer`](./skills/manim-explainer/SKILL.md) | you want to watch an idea unfold, or want something to rewatch before an exam | a narrated video in the style of 3Blue1Brown. It asks which voice you want first, which is Mark, Alex, Will, Matilda or Jessica, and it can play you a free sample of each. Making the video costs ElevenLabs credits and takes a few minutes |
+| [`socratic-tutor`](./skills/socratic-tutor/SKILL.md) | you need to prove you actually know it | a session that teaches by asking you questions. It scores each part of the topic from 0 to 5, re-tests old material without warning, and ends with a final test |
 
 <details>
 <summary>more examples</summary>
 
 ```
-/lock-in I keep confusing authentication, authorisation and accounting
-/lock-in ~/uni/networks/unit-outline.pdf map
-/lock-in how does Diffie-Hellman actually work sketch
-/lock-in RSA video
-/lock-in quiz me on OSPF, I think I've got it
-/lock-in resume from: <a save state block from an earlier tutor session>
+/lock-in I keep mixing up weather and climate
+/lock-in ~/uni/psychology/unit-outline.pdf map
+/lock-in how does a vaccine train the immune system sketch
+/lock-in compound interest video
+/lock-in quiz me on the French Revolution, I think I've got it
+/lock-in resume from: <the saved block from an earlier tutor session>
 ```
 
 </details>
 
 ## updates
 
-`socratic-tutor` comes from Jane Street's [agent_skills](https://github.com/janestreet/agent_skills) repo. `skills/socratic-tutor` is a link into `vendor/agent_skills`, which is a submodule of that repo. A GitHub Action runs once a day and moves the submodule to Jane Street's latest commit, so `git pull` brings their changes down. You can also run it by hand from the Actions tab.
+`socratic-tutor` comes from Jane Street's [agent_skills](https://github.com/janestreet/agent_skills) repo. In this repo `skills/socratic-tutor` is a link into `vendor/agent_skills`, which is a submodule, meaning git's way of keeping another repo inside this one at a fixed version. A GitHub Action runs once a day and moves it to Jane Street's latest version, so a `git pull` here brings their changes down. You can also run the Action by hand from the Actions tab.
 
-`sketch` lives in its own repo at [Dakkshin/sketch](https://github.com/Dakkshin/sketch) and is pinned as a submodule. It moves when I bump it here.
+`sketch` lives in its own repo at [Dakkshin/sketch](https://github.com/Dakkshin/sketch) and is also kept here as a submodule. It only moves when I update it.
 
 ## make it yours
 
-Every skill is a single `SKILL.md` and some files beside it, so the fastest way to change how one behaves is to edit its `SKILL.md`. The routing lives in the root [`SKILL.md`](./SKILL.md). If you'd rather the path started with a sketch instead of a map, or wanted the video offered sooner, that's where you change it. How hard the tutor grades lives in its own `SKILL.md`.
+Each skill is one `SKILL.md` file plus a few files beside it, so the quickest way to change how a skill behaves is to edit its `SKILL.md`. The routing lives in the root [`SKILL.md`](./SKILL.md). That's the file to edit if you'd rather the path started with a sketch instead of a map, or you want the video offered sooner. How strictly the tutor grades you is set in its own `SKILL.md`.
 
 ## credits
 
-`socratic-tutor` is Jane Street's, under the MIT license that ships in `vendor/agent_skills`.
+`socratic-tutor` is Jane Street's, and it's under the MIT license that ships in `vendor/agent_skills`.
