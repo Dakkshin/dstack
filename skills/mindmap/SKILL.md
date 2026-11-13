@@ -9,7 +9,7 @@ A mindmap page turns a topic into a tree you can walk through. The root is the s
 
 You write the tree as a JSON file and a script turns it into the page. The look, motion and canvas behaviour all live in the template, so every map comes out the same way and you only ever think about content. The content is the hard part, and it is where this skill spends its effort.
 
-The reference build is `examples/forensics.json`, which is a digital forensics unit (CSG2305) with 5 sections and 18 leaves. Copy its shape and its tone.
+The reference build is `examples/forensics.json`, which is a digital forensics unit with 5 sections and 18 leaves. Take its shape and its tone from it, which is how many sections, how deep, and how long each card is. Never take its content, and don't reuse its section names or tags for another subject.
 
 ## Where the skill lives
 
@@ -65,23 +65,23 @@ To change a map later, edit `map.json` and rebuild. Never hand-edit the built HT
 
 ```json
 {
-  "unit": "CSG2305",
-  "title": "Digital Forensics",
+  "unit": "<UNIT CODE>",
+  "title": "<Subject name>",
   "subtitle": "Interactive Knowledge Tree",
-  "goal": "HD GOAL: 85%+",
+  "goal": "<the learner's goal, like a target grade>",
   "intro": "Click any card to read it here. Click a > badge to open its branches.",
   "openPillars": 2,
   "root": {
-    "title": "CSG2305 Digital Forensics",
+    "title": "<Subject name>",
     "desc": "One or two sentences on what the whole subject is for.",
     "tag": "UNIT ROOT",
     "children": [
       {
-        "title": "Evidence Intake & Preservation",
+        "title": "<Section name>",
         "desc": "What this section covers and why it matters.",
-        "tag": "ASSESSMENT 1 (40%)",
+        "tag": "<WHERE IT IS ASSESSED>",
         "children": [
-          { "title": "Order of Volatility (RFC 3227)", "desc": "RAM, then swap, then network state, then disk, then archives.", "tag": "VOLATILITY RULE", "src": "Week 2 slides, p.8" }
+          { "title": "<One idea, 34 characters or fewer>", "desc": "The idea in one plain sentence or two.", "tag": "<1 TO 3 WORDS>", "src": "<source, page or slide>" }
         ]
       }
     ]

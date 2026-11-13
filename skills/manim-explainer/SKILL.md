@@ -6,8 +6,15 @@ description: Make a narrated 3Blue1Brown-style explainer video with Manim Commun
 # Manim explainer
 
 Builds a narrated explainer from three project files. The engine in `scripts/` handles beat
-sync, TTS, rendering, audio placement and the visual overlap check. `examples/rsa/` is a full
-worked example (RSA, 11 scenes, about 7.5 minutes). Read it before writing a new project.
+sync, TTS, rendering, audio placement and the visual overlap check. Start every project by
+copying `templates/project/`, which is a two-scene starter that shows the whole contract in about
+100 lines and carries no topic of its own.
+
+`examples/rsa/` is a full worked video about RSA (11 scenes, about 7.5 minutes, roughly 66 KB).
+Do not read it whole and do not borrow its content. When you need one technique the starter
+doesn't show, such as a sidebar of running results or a morphing equation, grep for it
+(`grep -n "TransformMatchingTex\|always_redraw" "$MK/examples/rsa/scenes.py"`) and read only
+those lines.
 
 ## Where the skill lives
 
@@ -69,7 +76,8 @@ an unfamiliar id with a short sentence before building the whole project.
 
 ## Project layout
 
-Make a project dir (e.g. `./videos/<topic>/`) holding:
+Make a project dir with `cp -r "$MK/templates/project" ./videos/<topic>`, then replace the
+placeholder content in each file:
 
 - `compute.py`: computes every number shown or spoken and writes `numbers.json`, with asserts.
   Never type a number from memory into a scene or the narration. Read it from `numbers.json`.

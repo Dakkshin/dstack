@@ -20,7 +20,7 @@ Text font is Inter (`T()`), digit walls use DejaVu Sans Mono (`Mono()`), and mat
   (`show_header`) sits at the top-left corner.
 - One idea on screen. Call `self.clear_stage()` between ideas, which keeps the header.
 - Titles go at `to_edge(UP, buff=1.0-1.2)` so they clear the header. Diagrams sit around y = 0.
-- A sidebar of accumulated results (like the RSA key-gen rail) is fine. Keep it under 0.65 scale.
+- A sidebar of accumulated results (like a running list of values derived so far) is fine. Keep it under 0.65 scale.
 - Recap cards: one numbered row per point, `Tex` at font_size 40+, longest row under 12 units.
   Shorten the text rather than shrink the font.
 

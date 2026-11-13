@@ -31,7 +31,7 @@ Where the agent loads this folder as a plugin, the skills are named `dstack:<nam
    - A mode word if one was given: `define`, `table`, `map`, `sketch`, `video` or `tutor`.
    If the topic itself is missing, ask for it in one line. Everything else gets a sensible default and is stated, not asked.
 
-2. **A mode word or an obvious match goes straight to that skill.** "/lock-in idempotence define" is `define`. "/lock-in ~/uni/CSG2305/week3.pdf map" is `mindmap` in sources mode. "What's the difference between a mutex, a semaphore and a monitor" is `data-table`. Load the skill and run it with no preamble.
+2. **A mode word or an obvious match goes straight to that skill.** "/lock-in idempotence define" is `define`. "/lock-in ~/uni/networks/week3.pdf map" is `mindmap` in sources mode. "What's the difference between a mutex, a semaphore and a monitor" is `data-table`. Load the skill and run it with no preamble.
 
 3. **No mode means diagnose first.** Pick from the symptom, not the topic:
    - Unfamiliar vocabulary is blocking everything else, so start with `define`.
