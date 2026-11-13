@@ -21,7 +21,7 @@ Input: `$ARGUMENTS`
 | `manim-explainer` | wants to watch an idea unfold, or wants something to rewatch before an exam | A narrated 1080p60 MP4, which costs ElevenLabs credits and several minutes of render |
 | `socratic-tutor` | needs to prove they actually know it | A question-led session with a 0 to 5 skill map, spaced review and a final assessment |
 
-Where the agent loads this folder as a plugin, the skills are named `dstack:<name>`, such as `dstack:sketch`. Where it reads `~/.agents/skills`, they keep their plain `<name>`. Each skill's own SKILL.md stays the authority on how to run it, so load it and follow it rather than paraphrasing it from here.
+Where the app loads this folder as a plugin, the skills are named `dstack:<name>`, such as `dstack:sketch`. Where it reads `~/.agents/skills`, they keep their plain `<name>`. Each skill's own SKILL.md stays the authority on how to run it, so load it and follow it rather than paraphrasing it from here.
 
 ## Workflow
 

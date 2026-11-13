@@ -20,7 +20,7 @@ those lines.
 
 The folder holding this file is the skill folder, and every command below calls it `$MK`. It has
 one home, which is `~/projects/dstack/skills/manim-explainer` inside the dstack plugin, and each
-agent reaches that same folder in its own way: Claude Code loads it as `dstack:manim-explainer`,
+app reaches that same folder in its own way: an app that loads dstack as a plugin sees it as `dstack:manim-explainer`,
 `~/.agents/skills/manim-explainer` is a symlink to it, pi reads
 `~/.agents/skills` directly, and Antigravity reads it through `~/.gemini/config/skills` (which
 points at `~/.agents/skills`) as well as `~/.gemini/antigravity/skills` and

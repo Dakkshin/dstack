@@ -4,9 +4,9 @@ I'm Dax. I learn the way I debug, which is by finding the exact place where my u
 
 Most of the time an AI tutor gets that backwards. You ask one question and get back a wall of text, so you end up reading more and understanding about the same. The explanation is there but nothing makes you prove you've got it.
 
-**dstack is my answer.** It's a small set of learning skills for coding agents, behind one command called `/lock-in`. You tell it what you're trying to learn, and it works out what's actually in the way. That might be a word you can't pin down, terms that blur together, a subject you can't see the shape of, a mechanism you can't picture, or knowledge you've never been tested on. Then it reaches for the one tool that fixes that problem and leaves the other five alone.
+**dstack is my answer.** It's a small kit for learning anything with an AI assistant, behind one command called `/lock-in`. You tell it what you're trying to learn, and it works out what's actually in the way. That might be a word you can't pin down, terms that blur together, a subject you can't see the shape of, a mechanism you can't picture, or knowledge you've never been tested on. Then it reaches for the one tool that fixes that problem and leaves the other five alone.
 
-**The agent builds and you think.** The maps, tables, whiteboard pages and videos are scaffolding. The learning happens when you answer questions cold, so every path through dstack leads to the Socratic tutor.
+**The AI builds and you think.** The maps, tables, whiteboard pages and videos are scaffolding. The learning happens when you answer questions cold, so every path through dstack leads to the Socratic tutor.
 
 ## install
 
@@ -16,10 +16,10 @@ Clone it with its submodules, since two of the skills live in their own repos.
 git clone --recurse-submodules https://github.com/Dakkshin/dstack.git ~/projects/dstack
 ```
 
-Then point your agent at it.
+Then point your AI app at it. dstack is a set of skills, which are folders of plain instructions that an app can load, so it works in any app that reads skills.
 
-- If your agent loads a whole folder as a plugin, link the repo in under the name `lock-in`, such as `ln -s ~/projects/dstack ~/.claude/skills/lock-in`. The folder name becomes the root command, and the skills under it come up as `dstack:<name>`.
-- If your agent reads plain skill folders from `~/.agents/skills`, link each one in with `for s in ~/projects/dstack/skills/*; do ln -s "$s" ~/.agents/skills/; done`. The skills keep their plain names there.
+- If your app loads a whole folder as a plugin, link the repo into its skills folder under the name `lock-in`, as in `ln -s ~/projects/dstack <skills folder>/lock-in`. The folder name becomes the root command, and the skills under it come up as `dstack:<name>`.
+- If your app reads plain skill folders from `~/.agents/skills`, link each one in with `for s in ~/projects/dstack/skills/*; do ln -s "$s" ~/.agents/skills/; done`. The skills keep their plain names there.
 
 `manim-explainer` needs a one-time setup for its Python environment and an ElevenLabs key. Run `skills/manim-explainer/setup.sh` and put the key in `skills/manim-explainer/.env`. The other five skills need nothing beyond the clone.
 
