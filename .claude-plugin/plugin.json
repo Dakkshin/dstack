@@ -1,0 +1,23 @@
+{
+  "$schema": "https://anthropic.com/claude-code/plugin.schema.json",
+  "name": "dstack",
+  "version": "2.0.0",
+  "description": "Learn faster with AI. /dstack reads what you're stuck on and routes to the right tool: define a term, table terms that blur together, mindmap a subject, sketch a mechanism, make a Manim video, or drill to mastery with a Socratic tutor.",
+  "author": {
+    "name": "Dakkshin",
+    "email": "155803241+Dakkshin@users.noreply.github.com"
+  },
+  "skills": [
+    "./"
+  ],
+  "keywords": [
+    "learning",
+    "study",
+    "tutor",
+    "mindmap",
+    "sketch",
+    "manim",
+    "define",
+    "revision"
+  ]
+}

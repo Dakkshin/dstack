@@ -1,0 +1,135 @@
+{
+  "unit": "CSG2305",
+  "title": "Digital Forensics",
+  "subtitle": "Interactive Knowledge Tree",
+  "goal": "HD GOAL: 85%+",
+  "root": {
+    "title": "CSG2305 Digital Forensics",
+    "desc": "Complete forensic investigation lifecycle: identification, preservation, analysis, and testimony.",
+    "tag": "UNIT ROOT",
+    "children": [
+      {
+        "title": "Evidence Intake & Preservation",
+        "desc": "Order of Volatility (RFC 3227), cryptographic hashing, hardware write-blocking, and strict Chain of Custody.",
+        "tag": "ASSESSMENT 1 (40%)",
+        "expanded": true,
+        "children": [
+          {
+            "title": "Order of Volatility (RFC 3227)",
+            "desc": "RAM -> Swap/Pagefile -> Network Sockets -> File System -> Archival Media.",
+            "tag": "VOLATILITY RULE"
+          },
+          {
+            "title": "Cryptographic Integrity",
+            "desc": "MD5 + SHA-256 match before and after acquisition proves zero bit alteration.",
+            "tag": "HASH VERIFY"
+          },
+          {
+            "title": "Hardware Write-Blocking",
+            "desc": "Physical bridge intercepts ATA/SCSI write commands at firmware level.",
+            "tag": "CHAIN OF EVIDENCE"
+          },
+          {
+            "title": "Chain of Custody (CoC)",
+            "desc": "Tamper-evident evidence bags, transfer sign-offs, and vault logs.",
+            "tag": "LEGAL EVIDENCE"
+          }
+        ]
+      },
+      {
+        "title": "Windows OS Artifacts",
+        "desc": "Forensic evidence of program execution, file opening, folder navigation, and removable USB storage.",
+        "tag": "CASE STUDY (60%)",
+        "expanded": true,
+        "children": [
+          {
+            "title": "USBSTOR Registry Hive",
+            "desc": "Hardware vendor, model, unique device serial, first/last connection times.",
+            "tag": "EXFILTRATION PROOF"
+          },
+          {
+            "title": "Prefetch Files (.pf)",
+            "desc": "Proves binary execution, run counter, last 8 launch timestamps, loaded DLLs.",
+            "tag": "EXECUTION PROOF"
+          },
+          {
+            "title": "Shellbags & LNK Shortcuts",
+            "desc": "Reconstructs folder browsing habits even after directories are deleted.",
+            "tag": "KNOWING INTENT"
+          },
+          {
+            "title": "Recycle Bin ($I & $R)",
+            "desc": "$I stores original path & delete timestamp; $R holds raw deleted payload.",
+            "tag": "FILE DELETION"
+          }
+        ]
+      },
+      {
+        "title": "File Systems & Data Carving",
+        "desc": "Low-level NTFS / FAT structures, timestamp comparison, slack space, and file header/footer carving.",
+        "tag": "DEEP TECHNICAL",
+        "children": [
+          {
+            "title": "NTFS Master File Table ($MFT)",
+            "desc": "Compares $STANDARD_INFORMATION vs $FILE_NAME to flag timestomping drift.",
+            "tag": "ANTI-FORENSICS"
+          },
+          {
+            "title": "Slack Space & Unallocated Sectors",
+            "desc": "RAM slack & Drive slack: recovering fragmented clusters from past writes.",
+            "tag": "HEX ANALYSIS"
+          },
+          {
+            "title": "Magic Byte File Carving",
+            "desc": "Extracts deleted files without metadata (JPEG: FF D8 FF, PDF: %PDF-, ZIP: PK..).",
+            "tag": "RAW RECOVERY"
+          }
+        ]
+      },
+      {
+        "title": "Timeline & Expert Reporting",
+        "desc": "Correlating disparate clues into a single chronological MACB narrative for judicial scrutiny.",
+        "tag": "EXPERT WITNESS",
+        "children": [
+          {
+            "title": "MACB Super-Timeline",
+            "desc": "Unified timeline: Modified, Accessed, Changed (MFT), and Born timestamps.",
+            "tag": "TIMELINE FUSION"
+          },
+          {
+            "title": "Dual-Tool Verification",
+            "desc": "Cross-validating findings with independent tools (Autopsy + Eric Zimmerman).",
+            "tag": "FULL MARKS"
+          },
+          {
+            "title": "Fact vs. Inference Reporting",
+            "desc": "State only verifiable technical observations without ungrounded speculation.",
+            "tag": "COURT ETHICS"
+          }
+        ]
+      },
+      {
+        "title": "Recommended Toolchain",
+        "desc": "Forensic analysis suites recommended for coursework labs and practical assessments.",
+        "tag": "TOOL SUITE",
+        "children": [
+          {
+            "title": "Autopsy (The Workhorse)",
+            "desc": "Ingests E01/RAW images, keyword indexer, EXIF parser, web artifact analyzer.",
+            "tag": "GUI SUITE"
+          },
+          {
+            "title": "FTK Imager Lite",
+            "desc": "Bitstream forensic imaging, physical memory capture, raw drive mounting.",
+            "tag": "IMAGING"
+          },
+          {
+            "title": "Eric Zimmerman Suite",
+            "desc": "PECmd (Prefetch), JLECmd (JumpLists), SBECmd (ShellBags) precision CLI tools.",
+            "tag": "TRIAGE"
+          }
+        ]
+      }
+    ]
+  }
+}

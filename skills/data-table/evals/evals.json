@@ -1,0 +1,48 @@
+{
+  "skill": "data-table",
+  "test_cases": [
+    {
+      "name": "online_softmax_terms",
+      "input": "I am having a hard time understanding Online Softmax. Can you make a table for SRAM, HBM, Safe Softmax, Online Softmax, FlashAttention, and FlashDecoding with columns for Term, What It Is In Plain English, Why It Exists/The Problem it Solves, and Where It Runs in Hardware?",
+      "assertions": [
+        "Outputs a Markdown table with exactly those six terms as rows",
+        "Uses the four columns the user asked for, in that order",
+        "Each cell is short plain English that separates the concept from its problem and location"
+      ]
+    },
+    {
+      "name": "partial_columns_keep",
+      "input": "Make a clarifying table for the terms transformer and attention. Use my columns: Term, Plain English, Why.",
+      "assertions": [
+        "Preserves the three user-supplied columns",
+        "Does not insert an unrequested hardware or location column",
+        "Fills only the requested cells"
+      ]
+    },
+    {
+      "name": "columns_adapt_to_domain",
+      "input": "I keep confusing the Treaty of Versailles, the Marshall Plan and Bretton Woods. Table please.",
+      "assertions": [
+        "Chooses columns suited to a history question (e.g. date, actors, problem addressed, outcome)",
+        "Does not force a hardware or memory-tier column",
+        "One row per named item, no items invented"
+      ]
+    },
+    {
+      "name": "columns_adapt_to_business",
+      "input": "Put CAC, LTV and payback period in a table so I stop mixing up what each one measures.",
+      "assertions": [
+        "Columns name what is measured, the cost or driver behind it, and how it is used in a decision",
+        "No jargon definition that just restates the acronym"
+      ]
+    },
+    {
+      "name": "narrative_not_table",
+      "input": "Tell me the story of how FlashAttention was invented and what happened next.",
+      "assertions": [
+        "Does not produce a table",
+        "Responds in sequential prose instead"
+      ]
+    }
+  ]
+}

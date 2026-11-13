@@ -1,0 +1,3 @@
+[submodule "skills/sketch"]
+	path = skills/sketch
+	url = https://github.com/Dakkshin/sketch.git

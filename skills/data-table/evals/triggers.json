@@ -1,0 +1,13 @@
+{
+  "skill": "data-table",
+  "test_cases": [
+    {"input": "make a table to separate these terms so I can understand them", "should_trigger": true},
+    {"input": "I can't parse this jargon, can you put it in a clarifying table", "should_trigger": true},
+    {"input": "build a mental model table for SRAM HBM Online Softmax", "should_trigger": true},
+    {"input": "table please, I keep mixing up the Marshall Plan and Bretton Woods", "should_trigger": true},
+    {"input": "put CAC, LTV and payback period side by side", "should_trigger": true},
+    {"input": "what is the weather today", "should_trigger": false},
+    {"input": "write me a narrative history of the algorithm", "should_trigger": false},
+    {"input": "just define online softmax in one paragraph", "should_trigger": false}
+  ]
+}

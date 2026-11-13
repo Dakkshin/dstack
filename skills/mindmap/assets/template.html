@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__MINDMAP_TITLE__</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root {
+    /* Excalidraw Sketch Palette */
+    --paper: #181a20;
+    --dot: #2a2e39;
+    --ink: #e2e8f0;
+    --ink-muted: #94a3b8;
+    --card-bg: #222630;
+    --card-hover: #2b313e;
+    --card-active: #333a49;
+    --border-sketch: #4b5563;
+    --border-sketch-active: #38bdf8;
+    --root-bg: #292d3e;
+    --root-border: #818cf8;
+
+    /* Highlighter accents */
+    --accent-blue: #38bdf8;
+    --accent-blue-bg: rgba(56, 189, 248, 0.15);
+    --accent-yellow: #fbbf24;
+    --accent-yellow-bg: rgba(251, 191, 36, 0.15);
+    --accent-green: #34d399;
+    --accent-green-bg: rgba(52, 211, 153, 0.15);
+    --accent-violet: #a78bfa;
+    --accent-violet-bg: rgba(167, 139, 250, 0.15);
+
+    /* Emil Kowalski Refined Motion Tokens */
+    /* Fluid deceleration curve that starts with intent and gently settles */
+    --ease-fluid: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-spring: cubic-bezier(0.34, 1.35, 0.64, 1);
+    --duration-press: 140ms;
+    --duration-branch-enter: 460ms;
+    --stagger-delay: 75ms;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Kalam', 'Segoe Print', cursive;
+    color: var(--ink);
+    background: var(--paper);
+    user-select: none;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
+  /* Full-page Excalidraw shell */
+  .sketch-container {
+    position: fixed;
+    inset: 0;
+    background-color: var(--paper);
+    overflow: hidden;
+  }
+
+  /* Floating toolbar */
+  .sketch-toolbar {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    right: 14px;
+    z-index: 10;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 18px;
+    background: rgba(20, 23, 30, 0.88);
+    border: 2px solid var(--border-sketch);
+    border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+    box-shadow: 3px 4px 0px rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(6px);
+  }
+
+  .zoom-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding-left: 10px;
+    border-left: 2px dashed var(--border-sketch);
+  }
+
+  .zoom-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    min-width: 46px;
+    text-align: center;
+    color: var(--ink-muted);
+    cursor: pointer;
+  }
+
+  .title-tag {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--ink);
+    letter-spacing: 0.02em;
+  }
+
+  .unit-pill {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    padding: 2px 8px;
+    border: 1.5px solid var(--accent-violet);
+    background: var(--accent-violet-bg);
+    color: #c4b5fd;
+    border-radius: 12px 4px 10px 5px / 5px 10px 4px 12px;
+  }
+
+  .controls-group {
+    display: flex;
+    gap: 8px;
+  }
+
+  /* Hand-drawn button with tactile Emil press-feedback */
+  .sketch-btn {
+    font-family: 'Kalam', cursive;
+    font-size: 14px;
+    font-weight: 700;
+    background: var(--card-bg);
+    color: var(--ink);
+    border: 1.8px solid var(--border-sketch);
+    border-radius: 255px 12px 225px 12px / 12px 225px 12px 255px;
+    padding: 5px 14px;
+    cursor: pointer;
+    box-shadow: 2px 2px 0px var(--border-sketch);
+    transition: transform var(--duration-press) var(--ease-fluid), box-shadow var(--duration-press) var(--ease-fluid), background 0.15s ease;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .sketch-btn:hover {
+      transform: translate(-1px, -1px);
+      box-shadow: 3px 3px 0px var(--border-sketch-active);
+      border-color: var(--border-sketch-active);
+      background: var(--card-hover);
+    }
+  }
+
+  .sketch-btn:active {
+    transform: translate(1px, 1px) scale(0.97) !important;
+    box-shadow: 1px 1px 0px var(--border-sketch);
+  }
+
+  /* Infinite canvas viewport: drag to pan, pinch / ctrl+scroll to zoom.
+     The dot grid lives here and is re-positioned in JS so it moves with the world. */
+  .canvas-viewport {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    cursor: grab;
+    touch-action: none;
+    background-image: radial-gradient(var(--dot) 1.5px, transparent 1.5px);
+    background-size: 22px 22px;
+  }
+
+  .canvas-viewport.panning {
+    cursor: grabbing;
+  }
+
+  .canvas-viewport.panning .sketch-node {
+    cursor: grabbing;
+  }
+
+  /* Everything that pans and zooms together */
+  .world {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform-origin: 0 0;
+  }
+
+  /* Only button / keyboard zooms glide; drag and wheel stay 1:1 with the hand */
+  .world.easing {
+    transition: transform 420ms var(--ease-fluid);
+  }
+
+  .canvas-viewport.easing {
+    transition: background-position 420ms var(--ease-fluid), background-size 420ms var(--ease-fluid);
+  }
+
+  svg.connections-svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    overflow: visible;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .nodes-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 0;
+    overflow: visible;
+    z-index: 2;
+  }
+
+  /* Excalidraw Node Cards */
+  .sketch-node {
+    position: absolute;
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 16px;
+    background: var(--card-bg);
+    border: 1.8px solid var(--border-sketch);
+    border-radius: 255px 12px 225px 14px / 14px 225px 12px 255px;
+    box-shadow: 3px 3px 0px rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+    white-space: nowrap;
+    transform-origin: left center;
+    transition: transform var(--duration-press) var(--ease-fluid), box-shadow 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+  }
+
+  .sketch-node.alt-wobble {
+    border-radius: 14px 225px 12px 255px / 255px 12px 225px 14px;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .sketch-node:hover {
+      background: var(--card-hover);
+      border-color: #6b7280;
+      transform: translate(-1px, -1px);
+      box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.4);
+    }
+  }
+
+  /* Emil: scale down on active press */
+  .sketch-node:active {
+    transform: scale(0.97) !important;
+    box-shadow: 1px 1px 0px rgba(0, 0, 0, 0.3);
+  }
+
+  .sketch-node.selected {
+    border-color: var(--accent-blue);
+    background: #252e3d;
+    box-shadow: 3px 3px 0px var(--accent-blue);
+  }
+
+  .sketch-node.root-node {
+    background: var(--root-bg);
+    border: 2.2px solid var(--root-border);
+    padding: 11px 20px;
+    border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+    box-shadow: 4px 4px 0px rgba(99, 102, 241, 0.35);
+  }
+
+  .node-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--ink);
+    letter-spacing: 0.01em;
+  }
+
+  .root-node .node-title {
+    font-size: 17px;
+    color: #e0e7ff;
+  }
+
+  .pillar-node {
+    font-size: 15.5px;
+    border-color: #525e75;
+    background: #242936;
+  }
+
+  /* Refined Emil Branch Unfolding Animation:
+     - 460ms graceful duration
+     - Starts from scale(0.92) with -18px slide & subtle blur
+     - Fluid cubic-bezier(0.16, 1, 0.3, 1) */
+  @keyframes emilBranchEnter {
+    0% {
+      opacity: 0;
+      transform: scale(0.92) translateX(-18px);
+      filter: blur(2px);
+    }
+    60% {
+      opacity: 0.9;
+      filter: blur(0.5px);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1) translateX(0);
+      filter: blur(0px);
+    }
+  }
+
+  .sketch-node.entering {
+    animation: emilBranchEnter var(--duration-branch-enter) var(--ease-fluid) both;
+  }
+
+  /* SVG Line Drawing Keyframe */
+  @keyframes drawLineOrganic {
+    0% {
+      stroke-dashoffset: 400;
+      opacity: 0.2;
+    }
+    100% {
+      stroke-dashoffset: 0;
+      opacity: 1;
+    }
+  }
+
+  .animating-path {
+    stroke-dasharray: 400;
+    animation: drawLineOrganic var(--duration-branch-enter) var(--ease-fluid) both;
+  }
+
+  .animating-dot {
+    opacity: 0;
+    animation: emilBranchEnter var(--duration-branch-enter) var(--ease-fluid) both;
+  }
+
+  /* Hand-drawn circular expand / collapse badge */
+  .toggle-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    margin-left: 12px;
+    border-radius: 50% 46% 54% 48%;
+    border: 1.5px solid var(--ink-muted);
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--ink);
+    font-size: 12px;
+    font-weight: 700;
+    flex-shrink: 0;
+    transition: transform 260ms var(--ease-spring), background 0.2s ease, border-color 0.2s ease;
+  }
+
+  .sketch-node:hover .toggle-badge {
+    border-color: var(--accent-blue);
+    color: var(--accent-blue);
+    transform: scale(1.12);
+  }
+
+  .toggle-badge.expanded {
+    background: var(--accent-blue-bg);
+    border-color: var(--accent-blue);
+    color: var(--accent-blue);
+    transform: rotate(90deg);
+  }
+
+  /* Details Inspector Drawer */
+  .sketch-drawer {
+    position: absolute;
+    left: 14px;
+    right: 14px;
+    bottom: 14px;
+    z-index: 10;
+    display: flex;
+    gap: 16px;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 20px;
+    background: rgba(18, 20, 26, 0.92);
+    border: 2px solid var(--border-sketch);
+    border-radius: 15px 225px 15px 255px / 255px 15px 225px 15px;
+    box-shadow: 3px 4px 0px rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(6px);
+  }
+
+  .drawer-src {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--accent-yellow);
+    margin-top: 2px;
+  }
+
+  .drawer-src:empty { display: none; }
+
+  .drawer-hint {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 4px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .world.easing, .canvas-viewport.easing { transition: none; }
+    .sketch-node.entering, .animating-path, .animating-dot {
+      animation-duration: 1ms;
+      animation-delay: 0ms !important;
+    }
+  }
+
+  .drawer-left {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .drawer-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .drawer-desc {
+    font-family: 'Inter', -apple-system, sans-serif;
+    font-size: 13px;
+    color: var(--ink-muted);
+    max-width: 540px;
+    line-height: 1.45;
+  }
+
+  .highlighter-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border: 1.5px solid var(--accent-blue);
+    background: var(--accent-blue-bg);
+    color: var(--accent-blue);
+    border-radius: 12px 4px 10px 5px / 5px 10px 4px 12px;
+  }
+</style>
+</head>
+<body>
+
+<div class="sketch-container">
+  <!-- Toolbar -->
+  <div class="sketch-toolbar">
+    <div class="title-tag">
+      <span class="unit-pill" id="unit-pill"></span>
+      <span id="map-title"></span>
+    </div>
+    <div class="controls-group">
+      <button class="sketch-btn" id="btn-expand-all">Expand All</button>
+      <button class="sketch-btn" id="btn-collapse">Collapse</button>
+      <div class="zoom-group">
+        <button class="sketch-btn" id="btn-zoom-out" title="Zoom out (-)">&minus;</button>
+        <span class="zoom-label" id="zoom-label" title="Reset to 100% (0)">100%</span>
+        <button class="sketch-btn" id="btn-zoom-in" title="Zoom in (+)">+</button>
+        <button class="sketch-btn" id="btn-recenter" title="Fit everything (F)">Fit</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Infinite Canvas Viewport (sits behind the floating toolbar + drawer) -->
+  <div class="canvas-viewport" id="viewport">
+    <div class="world" id="world">
+      <svg class="connections-svg" id="connections-svg"></svg>
+      <div class="nodes-layer" id="nodes-layer"></div>
+    </div>
+  </div>
+
+  <!-- Details Drawer -->
+  <div class="sketch-drawer" id="details-drawer">
+    <div class="drawer-left">
+      <div class="drawer-title" id="drawer-title"></div>
+      <div class="drawer-desc" id="drawer-desc"></div>
+      <div class="drawer-src" id="drawer-src"></div>
+      <div class="drawer-hint">drag to pan &middot; scroll to move &middot; ctrl+scroll or pinch to zoom &middot; F to fit</div>
+    </div>
+    <div id="drawer-badge"></div>
+  </div>
+</div>
+
+<script>
+(function() {
+  var MAP = /*__MINDMAP_DATA__*/null;
+  var treeData = MAP.root;
+
+  // Ids drive selection and animation; fill any the data left out
+  (function assignIds(node, path) {
+    node.id = node.id || path;
+    (node.children || []).forEach(function(c, i) { assignIds(c, path + "_" + i); });
+  })(treeData, "root");
+  treeData.id = "root";
+  treeData.expanded = true;
+
+  var viewport = document.getElementById('viewport');
+  var nodesLayer = document.getElementById('nodes-layer');
+  var svgLayer = document.getElementById('connections-svg');
+
+  var drawerTitle = document.getElementById('drawer-title');
+  var drawerDesc = document.getElementById('drawer-desc');
+  var drawerBadge = document.getElementById('drawer-badge');
+  var drawerSrc = document.getElementById('drawer-src');
+
+  function setBadge(text) {
+    drawerBadge.textContent = "";
+    if (!text) return;
+    var tag = document.createElement("span");
+    tag.className = "highlighter-tag";
+    tag.textContent = text;
+    drawerBadge.appendChild(tag);
+  }
+
+  function showInDrawer(node) {
+    drawerTitle.textContent = node.title;
+    drawerDesc.textContent = node.desc || "";
+    drawerSrc.textContent = node.src ? "source: " + node.src : "";
+    setBadge(node.tag || "TOPIC");
+  }
+
+  // Header + resting drawer come from the data
+  document.getElementById("unit-pill").textContent = MAP.unit || "MAP";
+  if (!MAP.unit) document.getElementById("unit-pill").style.display = "none";
+  document.getElementById("map-title").textContent =
+    MAP.title + (MAP.subtitle ? " \u2022 " + MAP.subtitle : "");
+  drawerTitle.textContent = (MAP.unit ? MAP.unit + ": " : "") + MAP.title;
+  drawerDesc.textContent = MAP.intro || "Click any card to read it here. Click a > badge to open its branches.";
+  setBadge(MAP.goal || treeData.tag);
+
+  var selectedId = "root";
+
+  var COL_X = [36, 370, 760];
+  
+  var LEAF_CARD_HEIGHT = 42;
+  var LEAF_GAP_Y = 26;
+  var SECTION_MARGIN_Y = 48;
+  var START_Y = 32;
+
+  function measureLayout() {
+    function computeHeight(node) {
+      if (!node.expanded || !node.children || node.children.length === 0) {
+        node.leafHeight = LEAF_CARD_HEIGHT + LEAF_GAP_Y;
+        return node.leafHeight;
+      }
+      var sum = 0;
+      for (var i = 0; i < node.children.length; i++) {
+        sum += computeHeight(node.children[i]);
+      }
+      if (node.depth === 1) {
+        sum += SECTION_MARGIN_Y;
+      }
+      node.leafHeight = sum;
+      return sum;
+    }
+
+    function setDepths(node, d) {
+      node.depth = d;
+      if (node.children) {
+        for (var i = 0; i < node.children.length; i++) {
+          setDepths(node.children[i], d + 1);
+        }
+      }
+    }
+    setDepths(treeData, 0);
+    computeHeight(treeData);
+
+    function assignCoords(node, curY) {
+      node.x = COL_X[node.depth] || (COL_X[2] + (node.depth - 2) * 390);
+
+      if (!node.expanded || !node.children || node.children.length === 0) {
+        node.y = curY + 20;
+        return;
+      }
+
+      var currentY = curY;
+      for (var i = 0; i < node.children.length; i++) {
+        var child = node.children[i];
+        assignCoords(child, currentY);
+        currentY += child.leafHeight;
+      }
+
+      var firstY = node.children[0].y;
+      var lastY = node.children[node.children.length - 1].y;
+      node.y = (firstY + lastY) / 2;
+    }
+
+    assignCoords(treeData, START_Y);
+  }
+
+  var contentBounds = { x: 0, y: 0, w: 1, h: 1 };
+
+  function render(animatingParentId, afterLayout) {
+    measureLayout();
+
+    nodesLayer.innerHTML = "";
+    svgLayer.innerHTML = "";
+
+    var maxW = 1140;
+    var maxH = 520;
+
+    var childIndexTracker = 0;
+
+    function buildNodeCards(node, parent) {
+      var card = document.createElement("div");
+      var isRoot = node.id === "root";
+      var isPillar = (node.depth === 1);
+      var isAlt = (node.depth % 2 === 1);
+
+      card.className = "sketch-node" + 
+        (isRoot ? " root-node" : "") + 
+        (isPillar ? " pillar-node" : "") +
+        (isAlt ? " alt-wobble" : "") + 
+        (node.id === selectedId ? " selected" : "");
+
+      card.style.left = node.x + "px";
+      card.style.top = (node.y - 20) + "px";
+
+      // Emil Kowalski Stagger Cascade: 75ms per child
+      if (animatingParentId && parent && parent.id === animatingParentId) {
+        card.classList.add("entering");
+        card.style.animationDelay = (childIndexTracker * 75) + "ms";
+        node.enterDelayMs = (childIndexTracker * 75);
+        childIndexTracker++;
+      } else {
+        node.enterDelayMs = 0;
+      }
+
+      var label = document.createElement("span");
+      label.className = "node-title";
+      label.textContent = node.title;
+      card.appendChild(label);
+
+      if (node.children && node.children.length > 0) {
+        var toggle = document.createElement("div");
+        toggle.className = "toggle-badge" + (node.expanded ? " expanded" : "");
+        toggle.textContent = ">";
+        toggle.title = node.expanded ? "Collapse section" : "Expand section";
+
+        toggle.addEventListener("click", function(e) {
+          e.stopPropagation();
+          node.expanded = !node.expanded;
+          render(node.expanded ? node.id : null);
+        });
+
+        card.appendChild(toggle);
+      }
+
+      card.addEventListener("click", function() {
+        selectedId = node.id;
+        showInDrawer(node);
+        
+        var all = document.querySelectorAll(".sketch-node");
+        for (var k = 0; k < all.length; k++) {
+          all[k].classList.remove("selected");
+        }
+        card.classList.add("selected");
+      });
+
+      nodesLayer.appendChild(card);
+      node.element = card;
+
+      if (node.x + 320 > maxW) maxW = node.x + 320;
+      if (node.y + 70 > maxH) maxH = node.y + 70;
+
+      if (node.expanded && node.children) {
+        for (var j = 0; j < node.children.length; j++) {
+          buildNodeCards(node.children[j], node);
+        }
+      }
+    }
+
+    buildNodeCards(treeData, null);
+
+    svgLayer.setAttribute("width", maxW);
+    svgLayer.setAttribute("height", maxH);
+    svgLayer.style.width = maxW + "px";
+    svgLayer.style.height = maxH + "px";
+
+    // Draw hand-drawn organic cubic bezier curves with animated stroke draw-in
+    function drawOrganicConnections(node) {
+      if (!node.expanded || !node.children) return;
+
+      var px = node.x + node.element.offsetWidth;
+      var py = node.y;
+
+      for (var i = 0; i < node.children.length; i++) {
+        var child = node.children[i];
+        var cx = child.x;
+        var cy = child.y;
+
+        var dx = (cx - px) * 0.52;
+        
+        var pathData = "M " + px + " " + py + 
+                       " C " + (px + dx) + " " + py + ", " + 
+                               (cx - dx) + " " + cy + ", " + 
+                               cx + " " + cy;
+
+        var path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        path.setAttribute("d", pathData);
+        path.setAttribute("fill", "none");
+        path.setAttribute("stroke", "#79869e");
+        path.setAttribute("stroke-width", "1.9");
+        path.setAttribute("stroke-linecap", "round");
+
+        // If this child is actively entering, animate the line drawing in sync with it!
+        if (animatingParentId && node.id === animatingParentId) {
+          path.classList.add("animating-path");
+          path.style.animationDelay = (child.enterDelayMs || 0) + "ms";
+        }
+
+        svgLayer.appendChild(path);
+
+        // Sketched connection circle
+        var dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        dot.setAttribute("cx", cx);
+        dot.setAttribute("cy", cy);
+        dot.setAttribute("r", "2.8");
+        dot.setAttribute("fill", "#38bdf8");
+
+        if (animatingParentId && node.id === animatingParentId) {
+          dot.classList.add("animating-dot");
+          dot.style.animationDelay = (child.enterDelayMs || 0) + "ms";
+        }
+
+        svgLayer.appendChild(dot);
+
+        drawOrganicConnections(child);
+      }
+    }
+
+    requestAnimationFrame(function() {
+      drawOrganicConnections(treeData);
+
+      // Real content bounds, used by "Fit"
+      var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      var cards = nodesLayer.children;
+      for (var c = 0; c < cards.length; c++) {
+        var el = cards[c];
+        minX = Math.min(minX, el.offsetLeft);
+        minY = Math.min(minY, el.offsetTop);
+        maxX = Math.max(maxX, el.offsetLeft + el.offsetWidth);
+        maxY = Math.max(maxY, el.offsetTop + el.offsetHeight);
+      }
+      if (cards.length) {
+        contentBounds = { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
+      }
+      if (afterLayout) afterLayout();
+    });
+  }
+
+  /* ---------- Infinite canvas: pan + zoom ---------- */
+  var world = document.getElementById("world");
+  var zoomLabel = document.getElementById("zoom-label");
+  var toolbarEl = document.querySelector(".sketch-toolbar");
+  var drawerEl = document.getElementById("details-drawer");
+
+  var MIN_SCALE = 0.2;
+  var MAX_SCALE = 3;
+  var GRID = 22;
+  var view = { x: 0, y: 0, s: 1 };
+  var easeTimer = null;
+  var userMoved = false;
+
+  function clampScale(s) {
+    return Math.min(MAX_SCALE, Math.max(MIN_SCALE, s));
+  }
+
+  function applyView() {
+    world.style.transform = "translate(" + view.x + "px," + view.y + "px) scale(" + view.s + ")";
+    var g = GRID * view.s;
+    viewport.style.backgroundSize = g + "px " + g + "px";
+    viewport.style.backgroundPosition = view.x + "px " + view.y + "px";
+    zoomLabel.textContent = Math.round(view.s * 100) + "%";
+  }
+
+  // Glide only for discrete actions (buttons, keys); hand-driven input stays instant
+  function withEase(fn) {
+    world.classList.add("easing");
+    viewport.classList.add("easing");
+    fn();
+    clearTimeout(easeTimer);
+    easeTimer = setTimeout(function() {
+      world.classList.remove("easing");
+      viewport.classList.remove("easing");
+    }, 440);
+  }
+
+  function stopEase() {
+    clearTimeout(easeTimer);
+    world.classList.remove("easing");
+    viewport.classList.remove("easing");
+  }
+
+  // Zoom keeping the world point under (cx, cy) fixed on screen
+  function zoomAt(cx, cy, nextScale) {
+    nextScale = clampScale(nextScale);
+    var k = nextScale / view.s;
+    view.x = cx - (cx - view.x) * k;
+    view.y = cy - (cy - view.y) * k;
+    view.s = nextScale;
+    applyView();
+  }
+
+  function viewportCenter() {
+    return { x: viewport.clientWidth / 2, y: viewport.clientHeight / 2 };
+  }
+
+  function fitView(animate) {
+    var top = toolbarEl.offsetTop + toolbarEl.offsetHeight + 24;
+    var bottom = drawerEl.offsetTop - 24;
+    var left = 40;
+    var right = viewport.clientWidth - 40;
+    var availW = Math.max(100, right - left);
+    var availH = Math.max(100, bottom - top);
+    var b = contentBounds;
+    var s = clampScale(Math.min(availW / b.w, availH / b.h, 1.15));
+    var apply = function() {
+      view.s = s;
+      view.x = left + (availW - b.w * s) / 2 - b.x * s;
+      view.y = top + (availH - b.h * s) / 2 - b.y * s;
+      applyView();
+    };
+    if (animate) withEase(apply); else apply();
+  }
+
+  function stepZoom(factor) {
+    var c = viewportCenter();
+    withEase(function() { zoomAt(c.x, c.y, view.s * factor); });
+  }
+
+  // Wheel: scroll pans, ctrl/cmd+scroll and trackpad pinch zoom (Excalidraw convention)
+  viewport.addEventListener("wheel", function(e) {
+    e.preventDefault();
+    userMoved = true;
+    stopEase();
+    var unit = e.deltaMode === 1 ? 16 : (e.deltaMode === 2 ? viewport.clientHeight : 1);
+    if (e.ctrlKey || e.metaKey) {
+      var r = viewport.getBoundingClientRect();
+      var dy = Math.max(-40, Math.min(40, e.deltaY * unit));
+      zoomAt(e.clientX - r.left, e.clientY - r.top, view.s * Math.exp(-dy * 0.008));
+    } else {
+      var dx = e.deltaX * unit;
+      var dyPan = e.deltaY * unit;
+      if (e.shiftKey && !dx) { dx = dyPan; dyPan = 0; }
+      view.x -= dx;
+      view.y -= dyPan;
+      applyView();
+    }
+  }, { passive: false });
+
+  // Pointer: one finger / mouse drag pans, two fingers pinch-zoom
+  var pointers = {};
+  var pointerCount = 0;
+  var drag = null;
+  var pinch = null;
+  var didPan = false;
+
+  function pointerList() {
+    var out = [];
+    for (var k in pointers) out.push(pointers[k]);
+    return out;
+  }
+
+  function startDragFrom(p, alreadyPanning) {
+    drag = { sx: p.x, sy: p.y, vx: view.x, vy: view.y, active: !!alreadyPanning };
+  }
+
+  function startPinch() {
+    var ps = pointerList();
+    var r = viewport.getBoundingClientRect();
+    var mx = (ps[0].x + ps[1].x) / 2 - r.left;
+    var my = (ps[0].y + ps[1].y) / 2 - r.top;
+    pinch = {
+      d: Math.hypot(ps[0].x - ps[1].x, ps[0].y - ps[1].y) || 1,
+      wx: (mx - view.x) / view.s,
+      wy: (my - view.y) / view.s,
+      s: view.s
+    };
+    drag = null;
+  }
+
+  viewport.addEventListener("pointerdown", function(e) {
+    if (e.pointerType === "mouse" && e.button !== 0 && e.button !== 1) return;
+    if (e.button === 1) e.preventDefault(); // no middle-click autoscroll
+    userMoved = true;
+    stopEase();
+    if (pointerCount === 0) didPan = false;
+    pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+    pointerCount++;
+    if (pointerCount === 1) {
+      startDragFrom(pointers[e.pointerId], false);
+    } else if (pointerCount === 2) {
+      viewport.setPointerCapture(e.pointerId);
+      startPinch();
+    }
+  });
+
+  viewport.addEventListener("pointermove", function(e) {
+    var p = pointers[e.pointerId];
+    if (!p) return;
+    p.x = e.clientX;
+    p.y = e.clientY;
+
+    if (pinch && pointerCount >= 2) {
+      var ps = pointerList();
+      var r = viewport.getBoundingClientRect();
+      var mx = (ps[0].x + ps[1].x) / 2 - r.left;
+      var my = (ps[0].y + ps[1].y) / 2 - r.top;
+      var d = Math.hypot(ps[0].x - ps[1].x, ps[0].y - ps[1].y) || 1;
+      view.s = clampScale(pinch.s * d / pinch.d);
+      view.x = mx - pinch.wx * view.s;
+      view.y = my - pinch.wy * view.s;
+      didPan = true;
+      applyView();
+      return;
+    }
+
+    if (drag) {
+      var dx = e.clientX - drag.sx;
+      var dy = e.clientY - drag.sy;
+      if (!drag.active) {
+        if (Math.hypot(dx, dy) < 4) return; // still a click
+        drag.active = true;
+        didPan = true;
+        // Capture only once it's a real drag, so plain clicks still reach the cards
+        viewport.setPointerCapture(e.pointerId);
+        viewport.classList.add("panning");
+      }
+      view.x = drag.vx + dx;
+      view.y = drag.vy + dy;
+      applyView();
+    }
+  });
+
+  function endPointer(e) {
+    if (!pointers[e.pointerId]) return;
+    delete pointers[e.pointerId];
+    pointerCount--;
+    if (pointerCount < 2) pinch = null;
+    if (pointerCount === 1) {
+      // Hand off from pinch to pan without a jump
+      startDragFrom(pointerList()[0], true);
+    } else if (pointerCount <= 0) {
+      pointerCount = 0;
+      drag = null;
+      viewport.classList.remove("panning");
+    }
+  }
+  viewport.addEventListener("pointerup", endPointer);
+  viewport.addEventListener("pointercancel", endPointer);
+
+  // A drag that ends over a card must not count as a click on it
+  viewport.addEventListener("click", function(e) {
+    if (didPan) {
+      e.stopPropagation();
+      e.preventDefault();
+      didPan = false;
+    }
+  }, true);
+
+  // Keyboard: + / - zoom, 0 = 100%, F = fit
+  window.addEventListener("keydown", function(e) {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    var c = viewportCenter();
+    if (e.key === "+" || e.key === "=") { stepZoom(1.2); }
+    else if (e.key === "-" || e.key === "_") { stepZoom(1 / 1.2); }
+    else if (e.key === "0") { withEase(function() { zoomAt(c.x, c.y, 1); }); }
+    else if (e.key === "f" || e.key === "F") { fitView(true); }
+  });
+
+  // Stop the browser zooming the whole page on ctrl+scroll over the toolbar/drawer
+  window.addEventListener("wheel", function(e) {
+    if (e.ctrlKey) e.preventDefault();
+  }, { passive: false });
+
+  function setAllExpanded(state) {
+    function walk(n) {
+      if (n.children && n.id !== "root") n.expanded = state;
+      if (n.children) {
+        for (var i = 0; i < n.children.length; i++) walk(n.children[i]);
+      }
+    }
+    walk(treeData);
+    render(state ? "root" : null, function() { fitView(true); });
+  }
+
+  document.getElementById("btn-expand-all").addEventListener("click", function() { setAllExpanded(true); });
+  document.getElementById("btn-collapse").addEventListener("click", function() { setAllExpanded(false); });
+  document.getElementById("btn-recenter").addEventListener("click", function() { fitView(true); });
+  document.getElementById("btn-zoom-in").addEventListener("click", function() { stepZoom(1.2); });
+  document.getElementById("btn-zoom-out").addEventListener("click", function() { stepZoom(1 / 1.2); });
+  zoomLabel.addEventListener("click", function() {
+    var c = viewportCenter();
+    withEase(function() { zoomAt(c.x, c.y, 1); });
+  });
+
+  applyView();
+  render(null, function() { fitView(false); });
+
+  // Fonts load after first layout and change card widths: re-measure once they land
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(function() {
+      render(null, function() { if (!userMoved) fitView(false); });
+    });
+  }
+})();
+</script>
+</body>
+</html>
