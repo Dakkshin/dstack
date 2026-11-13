@@ -16,12 +16,12 @@ Input: `$ARGUMENTS`
 |---|---|---|
 | `define` | hits a word they can't pin down | A bounded definition of 250 words at most, which is intensional, extensional and ostensive |
 | `data-table` | keeps mixing up several terms that share a role | One Markdown table with columns chosen to separate them |
-| `mindmap` | can't see the whole subject or doesn't know what to learn next | An interactive HTML knowledge tree, built from what Claude knows or from their course files |
+| `mindmap` | can't see the whole subject or doesn't know what to learn next | An interactive HTML knowledge tree, built from what the model knows or from their course files |
 | `sketch` | can't picture how one mechanism works | A hand-drawn HTML explainer with step-through diagrams and live labs |
 | `manim-explainer` | wants to watch an idea unfold, or wants something to rewatch before an exam | A narrated 1080p60 MP4, which costs ElevenLabs credits and several minutes of render |
 | `socratic-tutor` | needs to prove they actually know it | A question-led session with a 0 to 5 skill map, spaced review and a final assessment |
 
-In Claude Code the skills are invoked through the Skill tool as `dstack:<name>`, such as `dstack:sketch`. Other agents (pi, opencode, Antigravity) reach the same folders as plain `<name>` through `~/.agents/skills`. Each skill's own SKILL.md stays the authority on how to run it, so load it and follow it rather than paraphrasing it from here.
+Where the agent loads this folder as a plugin, the skills are named `dstack:<name>`, such as `dstack:sketch`. Where it reads `~/.agents/skills`, they keep their plain `<name>`. Each skill's own SKILL.md stays the authority on how to run it, so load it and follow it rather than paraphrasing it from here.
 
 ## Workflow
 
