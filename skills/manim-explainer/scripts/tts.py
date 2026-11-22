@@ -1,18 +1,26 @@
-"""One ElevenLabs narration clip per beat.
+"""Narration audio: one ElevenLabs take per scene, cut into one clip per beat.
 
     python tts.py <project_dir>
+
+Each scene's beats are joined and spoken in a single request, so the delivery runs on from one
+beat to the next the way a person talks, instead of restarting every sentence. The request
+returns character timings, and the take is cut between beats in the middle of each pause, so
+every beat still gets its own clip (audio/<beat>.mp3) for build.py to place at its beat's start.
 
 Key: ELEVENLABS_API_KEY from the environment, else from <skill>/.env. Never printed.
 Voice: VOICE_NAME or VOICE_ID in the project's narration.py. There is no default, because the
 skill asks the person which voice to use before the first build.
-Clips are cached in <project>/audio/<beat>.mp3 next to a .txt of the text they were made
-from, so only changed beats are re-synthesised. Without a key it writes estimated
+Model: MODEL in narration.py, else ELEVENLABS_MODEL_ID, else eleven_multilingual_v2.
+Takes are cached per scene in audio/<scene>.take.mp3 with a stamp of what made them, so only
+scenes whose text or settings changed are re-synthesised. Without a key it writes estimated
 durations so a silent preview can still be timed.
 """
 
+import base64
 import importlib.util
 import json
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -31,38 +39,107 @@ VOICES = {
     "matilda": ("XrExE9yKIg1WjnnlVkGX", "middle-aged female, American; knowledgeable, made for teaching"),
     "jessica": ("r1KmysJdVYZjJCm4mL3b", "female, shared library; playful, bright and warm"),
 }
-DEFAULT_MODEL = "eleven_multilingual_v2"
+DEFAULT_MODEL = "eleven_v4"  # most expressive (Sept 2026); performs [audio tags] in the text
+EXPRESSIVE = ("eleven_v3", "eleven_v4")  # models that perform tags; others would read them aloud
+TAG = re.compile(r"\[[^\]]+\]\s*")
+
+
+def expressive(model):
+    return model.startswith(EXPRESSIVE)
+
+
+def strip_tags(text):
+    """The words alone: what script.md shows and what a non-expressive model is sent."""
+    return re.sub(r"\s{2,}", " ", TAG.sub("", text)).strip()
 WORDS_PER_SEC = 2.4  # silent estimate only
-# Three delivery registers. Real speech moves between them, so each beat picks one from its
-# content (see pick_register) instead of the whole video sitting on one setting.
-#   A: widest pitch range and texture, for hooks, questions and punchlines
+# Three delivery registers, chosen per scene (one take keeps one character all the way through):
+#   A: widest pitch range and texture, for the opening scene
 #   B: dynamic but softer, the default explaining voice
-#   C: gentle and steady, for number walkthroughs and the recap
+#   C: gentle and steady, for the closing scene
+# Force one with a fourth element on the scene: ("S03_X", "Title", [...beats], "A").
 REGISTERS = {
     "A": {"stability": 0.30, "similarity_boost": 0.85, "style": 0.35, "speed": 1.00},
     "B": {"stability": 0.42, "similarity_boost": 0.85, "style": 0.22, "speed": 1.00},
     "C": {"stability": 0.52, "similarity_boost": 0.80, "style": 0.12, "speed": 0.98},
 }
-PUNCH_WORDS = ("not secure", "breaks", "attacker", "instant", "hopeless", "stuck", "verified",
-               "a detail", "that is rsa", "the trick", "the real threat")
+# The expressive models take only these stability steps (creative, natural, robust). Tags
+# respond best at natural or below. eleven_v3 also rejects previous_text / next_text.
+V3_STABILITY = (0.0, 0.5, 1.0)
 
 
-def pick_register(text, first_in_scene, numeric_scene_end, prev_two):
-    """A for questions, scene openers and punchy lines; C for number-heavy steps; else B.
+def scene_register(i, n, scene):
+    if len(scene) > 3:
+        return scene[3]
+    return "A" if i == 0 else "C" if i == n - 1 else "B"
 
-    Never three of the same register in a row, so the delivery keeps moving."""
-    t = text.lower()
-    digits = sum(ch.isdigit() for ch in text)
-    words = len(text.split())
-    if "?" in text or any(w in t for w in PUNCH_WORDS) or (first_in_scene and words < 30):
-        r = "A"
-    elif digits >= 10 or numeric_scene_end:
-        r = "C"
+
+# ---------- lint: does the script read like speech? ----------
+
+BUILTIN_BANNED = ("manage", "handle", "facilitate", "leverage", "seamless", "robust", "powerful",
+                  "simply", "easily")
+META = ("let's", "note that", "in summary", "in this section", "to summarize")
+
+
+def style_file(nar):
+    """The style guide to write narration by: STYLE in narration.py, else NARRATION_STYLE."""
+    path = getattr(nar, "STYLE", "") or os.environ.get("NARRATION_STYLE", "")
+    return Path(path).expanduser() if path else None
+
+
+def banned_words(nar):
+    f = style_file(nar)
+    words = list(BUILTIN_BANNED)
+    if f and f.exists() and f.suffix == ".json":
+        try:
+            for item in json.loads(f.read_text()).get("bannedInBothModes", []):
+                words += [w.strip().lower() for w in re.split(r"[,/]", item.get("term", ""))
+                          if re.fullmatch(r"[a-z ]+", w.strip().lower() or "-")]
+        except (ValueError, AttributeError):
+            pass
+    return sorted(set(w for w in words if w and w not in META))
+
+
+def lint(nar, model=DEFAULT_MODEL):
+    """Warn about lines that read like text rather than speech. Never blocks the build."""
+    banned = banned_words(nar)
+    out = []
+    for _, _, beats, *_ in nar.SCENES:
+        for bid, raw, *_ in beats:
+            text = strip_tags(raw)
+            t = text.lower()
+            why = []
+            tags = TAG.findall(raw)
+            if tags and not expressive(model):
+                why.append(f"{len(tags)} tag(s) dropped: {model} would read them aloud")
+            if len(tags) > 2:
+                why.append(f"{len(tags)} tags in one beat (tags fight; keep to inflection points)")
+            caps = re.findall(r"\b[A-Z]{2,}\b", text)
+            caps = [c for c in caps if c not in ("GPU", "CPU", "RSA", "AI", "OK")]
+            if len(caps) > 1:
+                why.append(f"{len(caps)} capitalised words (one emphasis per beat)")
+            if re.search(r"[\u2014\u2013\u2192\u00b7\u2264\u2265]", text):
+                why.append("dash, arrow or symbol")
+            if re.search(r"\w: \w", text):
+                why.append("mid-sentence colon")
+            why += [f"'{w}'" for w in META if w in t]
+            why += [f"'{w}'" for w in banned if re.search(rf"\b{re.escape(w)}\b", t)]
+            why += [f"'{m}' (contract it)" for m in
+                    re.findall(r"\b(it is|that is|does not|do not|is not|can not|cannot|we will|you would)\b", t)]
+            sents = [x for x in re.split(r"(?<=[.?!])\s+", text) if x]
+            lens = [len(x.split()) for x in sents]
+            why += [f"{n}-word sentence" for n in lens if n > 30]
+            for a, b, c in zip(lens, lens[1:], lens[2:]):
+                if max(a, b, c) - min(a, b, c) <= 3 and min(a, b, c) >= 8:
+                    why.append("three sentences of the same length")
+                    break
+            if why:
+                out.append(f"  {bid}: {', '.join(dict.fromkeys(why))}")
+    if out:
+        print("script lint (reads like text, not speech; see references/voice.md):")
+        print("\n".join(out))
     else:
-        r = "B"
-    if prev_two == [r, r]:
-        r = "B" if r != "B" else ("A" if "?" in text or first_in_scene else "C")
-    return r
+        print("script lint: ok")
+
 
 def load_env():
     env = SKILL / ".env"
@@ -148,23 +225,56 @@ def probe(path: Path) -> float:
     return float(out.stdout.strip())
 
 
-def synth(text, prev, nxt, dest: Path, key, voice, model, settings):
+def synth(text, prev, nxt, key, voice, model, settings):
+    """One take with character timings. Returns (mp3 bytes, alignment dict)."""
+    body = {"text": text, "model_id": model, "voice_settings": settings}
+    if not model.startswith("eleven_v3"):
+        body.update(previous_text=strip_tags(prev), next_text=strip_tags(nxt))
     r = requests.post(
-        f"https://api.elevenlabs.io/v1/text-to-speech/{voice}",
+        f"https://api.elevenlabs.io/v1/text-to-speech/{voice}/with-timestamps",
         params={"output_format": "mp3_44100_128"},
-        headers={"xi-api-key": key, "accept": "audio/mpeg"},
-        json={
-            "text": text,
-            "model_id": model,
-            "previous_text": prev,
-            "next_text": nxt,
-            "voice_settings": settings,
-        },
-        timeout=120,
+        headers={"xi-api-key": key},
+        json=body,
+        timeout=300,
     )
     if r.status_code != 200:
-        sys.exit(f"ElevenLabs error {r.status_code} on {dest.name}: {r.text[:300]}")
-    dest.write_bytes(r.content)
+        sys.exit(f"ElevenLabs error {r.status_code}: {r.text[:300]}")
+    j = r.json()
+    return base64.b64decode(j["audio_base64"]), j.get("alignment") or j["normalized_alignment"]
+
+
+def cut_points(beat_texts, alignment, total):
+    """Seconds at which to cut a take into beats: the middle of the pause between each beat's
+    last character and the next beat's first. Returns [0, c1, ..., total]."""
+    chars = alignment["characters"]
+    starts, ends = alignment["character_start_times_seconds"], alignment["character_end_times_seconds"]
+    spoken = "".join(chars)
+    cuts, pos = [0.0], 0
+    for k, bt in enumerate(beat_texts[:-1]):
+        a = spoken.find(bt.strip()[:12], pos)
+        b = spoken.find(beat_texts[k + 1].strip()[:12], max(a, pos) + 1)
+        if a < 0 or b < 0:
+            sys.exit(f"could not find beat {k + 2} in the take's timings; check for symbols the "
+                     "model rewrites (spell them out in the text)")
+        last = b - 1
+        while last > 0 and not chars[last].strip():
+            last -= 1
+        cuts.append((ends[last] + starts[b]) / 2)
+        pos = b
+    cuts.append(total)
+    return cuts
+
+
+def cut(src, a, b, dest):
+    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(src), "-ss", f"{a:.3f}",
+                    "-to", f"{b:.3f}", "-c:a", "libmp3lame", "-b:a", "160k", str(dest)], check=True)
+
+
+def settings_for(model, base):
+    s = dict(base)
+    if expressive(model):
+        s["stability"] = min(V3_STABILITY, key=lambda v: abs(v - s["stability"]))
+    return s
 
 
 def main(project: Path):
@@ -172,42 +282,49 @@ def main(project: Path):
     key = os.environ.get("ELEVENLABS_API_KEY", "").strip()
     nar = load_narration(project)
     voice_name, voice = resolve_voice(nar)
-    model = os.environ.get("ELEVENLABS_MODEL_ID", DEFAULT_MODEL)
-    (project / "voice.json").write_text(json.dumps({"name": voice_name, "id": voice}, indent=1))
-    print(f"voice: {voice_name} ({voice})", flush=True)
+    model = getattr(nar, "MODEL", "") or os.environ.get("ELEVENLABS_MODEL_ID", DEFAULT_MODEL)
+    (project / "voice.json").write_text(json.dumps({"name": voice_name, "id": voice, "model": model},
+                                                   indent=1))
+    print(f"voice: {voice_name} ({voice}), model: {model}", flush=True)
+    lint(nar, model)
+    say = (lambda t: t.strip()) if expressive(model) else strip_tags
     regs = {k: {**v, **getattr(nar, "VOICE", {})} for k, v in REGISTERS.items()}
     if os.environ.get("ELEVENLABS_SPEED"):
         for v in regs.values():
             v["speed"] = float(os.environ["ELEVENLABS_SPEED"])
-    flat, plan, recent = [], {}, []
-    for sid, _, beats in nar.SCENES:
-        recap = "recap" in sid.lower()
-        for j, beat in enumerate(beats):
-            bid, text = beat[0], beat[1]
-            # a beat can force its register: ("id", "text", "A")
-            r = beat[2] if len(beat) > 2 else pick_register(text, j == 0, recap and j > 0, recent[-2:])
-            flat.append((bid, text))
-            plan[bid] = r
-            recent.append(r)
+
     audio = project / "audio"
     audio.mkdir(exist_ok=True)
-    (project / "registers.json").write_text(json.dumps(plan, indent=1))
-    durations = {}
-    for i, (bid, text) in enumerate(flat):
-        dest, stamp = audio / f"{bid}.mp3", audio / f"{bid}.txt"
-        settings = regs[plan[bid]]
-        tag = f"{voice}|{json.dumps(settings, sort_keys=True)}|{text}"
-        fresh = dest.exists() and stamp.exists() and stamp.read_text() == tag
+    scenes = nar.SCENES
+    texts = [" ".join(say(b[1]) for b in sc[2]) for sc in scenes]
+    plan, durations, all_real = {}, {}, True
+    for i, sc in enumerate(scenes):
+        sid, beats = sc[0], sc[2]
+        reg = scene_register(i, len(scenes), sc)
+        plan[sid] = reg
+        settings = settings_for(model, regs[reg])
+        take, stamp = audio / f"{sid}.take.mp3", audio / f"{sid}.take.txt"
+        tag = json.dumps({"voice": voice, "model": model, "settings": settings,
+                          "beats": [say(b[1]) for b in beats]}, sort_keys=True)
+        fresh = take.exists() and stamp.exists() and stamp.read_text() == tag \
+            and all((audio / f"{b[0]}.mp3").exists() for b in beats)
         if key and not fresh:
-            print(f"tts {bid} [{plan[bid]}]", flush=True)
-            prev = flat[i - 1][1] if i else ""
-            nxt = flat[i + 1][1] if i + 1 < len(flat) else ""
-            synth(text, prev, nxt, dest, key, voice, model, settings)
+            print(f"tts {sid} [{reg}] ({len(texts[i])} chars)", flush=True)
+            prev = texts[i - 1] if i else ""
+            nxt = texts[i + 1] if i + 1 < len(texts) else ""
+            data, align = synth(texts[i], prev, nxt, key, voice, model, settings)
+            take.write_bytes(data)
+            cuts = cut_points([say(b[1]) for b in beats], align, probe(take))
+            for (bid, *_), a, b in zip(beats, cuts, cuts[1:]):
+                cut(take, a, b, audio / f"{bid}.mp3")
             stamp.write_text(tag)
             fresh = True
-        durations[bid] = probe(dest) if fresh else round(len(text.split()) / WORDS_PER_SEC + 0.3, 2)
-    all_real = all((audio / f"{b}.txt").exists() and (audio / f"{b}.txt").read_text()
-                   == f"{voice}|{json.dumps(regs[plan[b]], sort_keys=True)}|{t}" for b, t in flat)
+        all_real &= fresh
+        for bid, text, *_ in beats:
+            clip = audio / f"{bid}.mp3"
+            durations[bid] = probe(clip) if fresh else \
+                round(len(strip_tags(text).split()) / WORDS_PER_SEC + 0.3, 2)
+    (project / "registers.json").write_text(json.dumps(plan, indent=1))
     source = "elevenlabs" if all_real else "estimate"
     (project / "durations.json").write_text(json.dumps({"source": source, "beats": durations}, indent=2))
     print(f"durations.json: {len(durations)} beats, {sum(durations.values()) / 60:.1f} min ({source})")

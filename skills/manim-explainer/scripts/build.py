@@ -8,9 +8,11 @@ Project layout: compute.py (optional, writes numbers.json), narration.py (SCENES
 TITLE / OUTPUT_NAME / INTRO / SOURCES), scenes.py (SCENE_ORDER + ExplainerScene subclasses).
 """
 
+import ast
 import importlib.util
 import json
 import os
+import re
 import subprocess
 import sys
 from concurrent.futures import ThreadPoolExecutor
@@ -36,12 +38,62 @@ def scene_order(project):
     return eval(src[src.index("[", start):src.index("]", start) + 1])
 
 
+ENTRY = r"\b(FadeIn|FadeOut|Write|Create|Uncreate|GrowArrow|GrowFromCenter|DrawBorderThenFill|AddTextLetterByLetter|Unwrite)\("
+MOTION = (r"\b(Transform\w*|ReplacementTransform|TransformFromCopy|MoveAlongPath|Rotate|Rotating|ApplyMatrix|"
+          r"ApplyPointwiseFunction\w*|ApplyComplexFunction|Homotopy|ComplexHomotopy|MoveToTarget|"
+          r"ShowPassingFlash|TracedPath|ValueTracker|always_redraw|add_updater|live_\w+)\b|"
+          r"\.animate\b|self\.(focus|home)\(")
+
+
+def motion_report(project):
+    """Warn about scenes that only bring things on and off screen. Entrances (FadeIn, Write...)
+    say "here is a thing"; motion (transforms, .animate, trackers, camera) says "this thing
+    becomes that one", which is where a 3b1b-style explanation does its work."""
+    src = (project / "scenes.py").read_text()
+    flat = []
+    for node in ast.parse(src).body:
+        if isinstance(node, ast.ClassDef):
+            body = ast.get_source_segment(src, node)
+            e, m = len(re.findall(ENTRY, body)), len(re.findall(MOTION, body))
+            if e + m == 0:
+                continue
+            share = m / (e + m)
+            if share < 0.3:
+                flat.append(f"{node.name} ({m} motion / {e} entrances)")
+    if flat:
+        print("motion check: these scenes are mostly fade-ins; make the objects on screen "
+              "move, morph or rescale (references/style.md):\n  " + "\n  ".join(flat))
+    else:
+        print("motion check: ok")
+
+
+def overrun_report(project, order, limit=0.5):
+    """Name beats whose animation ran on after the narration ended, which plays as dead air.
+    Fix them by shortening run_times in that beat, not by adding words."""
+    sys.path.insert(0, str(SKILL_SCRIPTS))
+    from explainer_lib import PAD  # noqa: E402
+    dur = json.loads((project / "durations.json").read_text())["beats"]
+    slow = []
+    for s in order:
+        t = json.loads((project / "timings" / f"{s}.json").read_text())
+        ids = list(t["beats"])
+        for i, bid in enumerate(ids):
+            nxt = t["beats"][ids[i + 1]] if i + 1 < len(ids) else None
+            if nxt is None:
+                continue
+            extra = nxt - t["beats"][bid] - dur[bid] - PAD
+            if extra > limit:
+                slow.append(f"{bid} (+{extra:.1f}s)")
+    print("overruns: " + (", ".join(slow) + " (animation outlasts the line; trim run_times)"
+                          if slow else "none"))
+
+
 def write_script(project, nar):
     lines = [f"# {getattr(nar, 'TITLE', 'Narration script')}", ""]
     if getattr(nar, "INTRO", ""):
         lines += [nar.INTRO, ""]
-    for i, (_, title, beats) in enumerate(nar.SCENES, 1):
-        lines += [f"## {i}. {title}", ""] + [b[1] for b in beats] + [""]
+    for i, (_, title, beats, *_) in enumerate(nar.SCENES, 1):
+        lines += [f"## {i}. {title}", ""] + [tts.strip_tags(b[1]) for b in beats] + [""]
     if getattr(nar, "SOURCES", None):
         lines += ["## Sources", ""] + [f"- {s}" for s in nar.SOURCES] + [""]
     (project / "script.md").write_text("\n".join(lines))
@@ -78,6 +130,7 @@ def main():
         sys.exit("final needs real narration: put ELEVENLABS_API_KEY in the skill's .env")
 
     order = scene_order(project)
+    motion_report(project)
     with ThreadPoolExecutor(max_workers=6) as ex:
         failed = []
         for scene, rc in ex.map(lambda s: render(project, s, q), only or order):
@@ -95,6 +148,7 @@ def main():
     silent = project / f"video_{mode}.mp4"
     ff("-f", "concat", "-safe", "0", "-i", lst, "-c", "copy", silent)
 
+    overrun_report(project, order)
     placements, offset, scene_of = [], 0.0, {}
     for s, v in zip(order, vids):
         t = json.loads((project / "timings" / f"{s}.json").read_text())
@@ -127,7 +181,7 @@ def main():
         old.unlink()
     beats = json.loads((project / "durations.json").read_text())["beats"]
     for bid, at in placements:
-        ff("-ss", f"{at + beats[bid] + 0.2:.2f}", "-i", out, "-frames:v", "1",
+        ff("-ss", f"{at + beats[bid] + 0.03:.2f}", "-i", out, "-frames:v", "1",
            "-vf", "scale=640:-1", chk / f"{scene_of[bid]}__{bid}.png")
     beat_ids = [b for b, _ in placements]
     for s in order:
